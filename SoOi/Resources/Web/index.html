@@ -255,7 +255,34 @@
       height: 0 !important;
       opacity: 0 !important;
     }
+
+    /* Tự động ẩn Gatekeeper và hiển thị Main App ngay từ frame đầu tiên nếu đã có phiên */
+    html.user-logged-in #auth-gatekeeper {
+      display: none !important;
+    }
+    html.user-logged-in #main-app-container {
+      display: flex !important;
+    }
+    html.user-logged-in #bottom-nav {
+      display: flex !important;
+    }
   </style>
+  <script>
+    (function () {
+      try {
+        var s = window.__INITIAL_SOOI_SESSION__;
+        if (!s) {
+          try { s = localStorage.getItem('sooi_user_session_v1'); } catch (_) {}
+        }
+        if (s) {
+          var u = (typeof s === 'object') ? s : JSON.parse(s);
+          if (u && (u.email || u.id)) {
+            document.documentElement.classList.add('user-logged-in');
+          }
+        }
+      } catch (_) {}
+    })();
+  </script>
 </head>
 
 <body class="bg-[#F3F4F4] text-[#1E293B] antialiased min-h-screen flex flex-col items-center">
@@ -1766,8 +1793,8 @@
         <div>
           <label class="block text-[11px] font-bold text-slate-500 mb-1">Số tiền (VNĐ)</label>
           <div class="relative flex items-center">
-            <input id="voice-draft-input-amount" type="number" step="1000" placeholder="0"
-              oninput="updateVoiceDraftAmountDisplay()"
+            <input id="voice-draft-input-amount" type="text" inputmode="numeric" placeholder="0"
+              oninput="formatMoneyInput(this); updateVoiceDraftAmountDisplay();"
               class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-[20px] font-black text-slate-900 focus:bg-white focus:border-[#0B7A60] focus:ring-1 focus:ring-[#0B7A60] transition" />
             <span class="absolute right-4 font-extrabold text-slate-400 text-[14px]">đ</span>
           </div>
@@ -1897,7 +1924,7 @@
         <!-- Amount Input -->
         <div>
           <label class="block text-[12px] font-bold text-slate-700 mb-1">Số tiền (VNĐ)</label>
-          <input id="cash-input-amount" type="number" placeholder="50000"
+          <input id="cash-input-amount" type="text" inputmode="numeric" placeholder="50,000" oninput="formatMoneyInput(this)"
             class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[18px] font-black text-slate-900 focus:ring-1 focus:ring-[#0B7A60]" />
         </div>
 
@@ -1954,7 +1981,7 @@
 
         <div>
           <label class="block text-[12px] font-bold text-slate-700 mb-1">Số tiền nợ (VNĐ)</label>
-          <input id="debt-input-amount" type="number" placeholder="200000"
+          <input id="debt-input-amount" type="text" inputmode="numeric" placeholder="200,000" oninput="formatMoneyInput(this)"
             class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[18px] font-black text-red-600" />
         </div>
 
@@ -1997,12 +2024,12 @@
         <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="block text-[12px] font-bold text-slate-700 mb-1">Giá bán (VNĐ)</label>
-            <input id="prod-input-price" type="number" placeholder="25000"
+            <input id="prod-input-price" type="text" inputmode="numeric" placeholder="25,000" oninput="formatMoneyInput(this)"
               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[14px] font-bold text-[#0B7A60]" />
           </div>
           <div>
             <label class="block text-[12px] font-bold text-slate-700 mb-1">Giá vốn (VNĐ)</label>
-            <input id="prod-input-cost" type="number" placeholder="10000"
+            <input id="prod-input-cost" type="text" inputmode="numeric" placeholder="10,000" oninput="formatMoneyInput(this)"
               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[14px] font-bold text-slate-600" />
           </div>
         </div>
@@ -2014,8 +2041,11 @@
               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-semibold text-slate-800">
               <option value="Cà phê">Cà phê</option>
               <option value="Trà & Sinh tố">Trà & Sinh tố</option>
+              <option value="Đồ uống">Đồ uống</option>
+              <option value="Đồ ăn">Đồ ăn</option>
               <option value="Đồ ăn vặt">Đồ ăn vặt</option>
               <option value="Bánh ngọt">Bánh ngọt</option>
+              <option value="Mặt hàng khác">Mặt hàng khác</option>
             </select>
           </div>
           <div>
@@ -2446,6 +2476,34 @@ CREATE POLICY "Users manage own settings" ON public.sooi_settings FOR ALL USING 
     const SOOI_SUBSCRIPTION_KEY = 'sooi_subscription_v1';
     const SOOI_SESSION_KEY = 'sooi_user_session_v1';
 
+    // ==========================================
+    // TIỆN ÍCH ĐỊNH DẠNG TIỀN TỆ CÓ DẤU PHẨY (10,000)
+    // ==========================================
+    function formatMoneyInput(el) {
+      if (!el) return;
+      const raw = String(el.value).replace(/\D/g, '');
+      if (!raw) {
+        el.value = '';
+        return;
+      }
+      const num = parseInt(raw, 10);
+      el.value = isNaN(num) ? '' : num.toLocaleString('en-US');
+    }
+
+    function parseMoneyInput(val) {
+      if (typeof val === 'number') return isNaN(val) ? 0 : val;
+      if (!val) return 0;
+      const clean = String(val).replace(/,/g, '').replace(/\D/g, '');
+      const n = parseInt(clean, 10);
+      return isNaN(n) ? 0 : n;
+    }
+
+    function formatNumberWithCommas(num) {
+      if (num == null || num === '' || isNaN(Number(num))) return '';
+      const n = parseInt(num, 10);
+      return isNaN(n) ? '' : n.toLocaleString('en-US');
+    }
+
     const SOOI_PLANS = {
       none: {
         key: 'none',
@@ -2495,10 +2553,14 @@ CREATE POLICY "Users manage own settings" ON public.sooi_settings FOR ALL USING 
           lastLogin: Date.now()
         };
         const str = JSON.stringify(minimalUser);
-        localStorage.setItem(SOOI_SESSION_KEY, str);
-        // Lưu đồng thời vĩnh viễn vào Native Android SharedPreferences (không bao giờ mất khi thoát app)
-        if (window.AndroidBridge && typeof window.AndroidBridge.saveAuthSession === 'function') {
-          window.AndroidBridge.saveAuthSession(str);
+        window.__INITIAL_SOOI_SESSION__ = str;
+        try { localStorage.setItem(SOOI_SESSION_KEY, str); } catch (_) {}
+        try { sessionStorage.setItem(SOOI_SESSION_KEY, str); } catch (_) {}
+
+        // Lưu đồng thời vĩnh viễn vào Native iOS UserDefaults / Android SharedPreferences (không bao giờ mất khi thoát app)
+        const bridge = window.iOSBridge || window.NativeBridge || window.AndroidBridge;
+        if (bridge && typeof bridge.saveAuthSession === 'function') {
+          bridge.saveAuthSession(str);
         }
       } catch (e) {
         console.warn('Lỗi lưu local session:', e);
@@ -2507,19 +2569,44 @@ CREATE POLICY "Users manage own settings" ON public.sooi_settings FOR ALL USING 
 
     function getLocalUserSession() {
       try {
-        // 1. Ưu tiên đọc từ Android Native SharedPreferences (bền vững 100%, không bị OS dọn dẹp WebStorage)
-        if (window.AndroidBridge && typeof window.AndroidBridge.getAuthSession === 'function') {
-          const nativeStr = window.AndroidBridge.getAuthSession();
-          if (nativeStr && nativeStr.trim().length > 0) {
+        // 1. Kiểm tra session được tiêm trực tiếp từ iOS Native UserDefaults ngay tại documentStart
+        if (window.__INITIAL_SOOI_SESSION__) {
+          if (typeof window.__INITIAL_SOOI_SESSION__ === 'object' && (window.__INITIAL_SOOI_SESSION__.email || window.__INITIAL_SOOI_SESSION__.id)) {
+            return window.__INITIAL_SOOI_SESSION__;
+          }
+          if (typeof window.__INITIAL_SOOI_SESSION__ === 'string') {
+            const s = window.__INITIAL_SOOI_SESSION__.trim();
+            if (s.length > 0) {
+              try {
+                const u = JSON.parse(s);
+                if (u && (u.email || u.id)) return u;
+              } catch (_) {}
+            }
+          }
+        }
+
+        // 2. Ưu tiên đọc từ Native Bridge SharedPreferences / UserDefaults (bền vững 100%, không bị OS dọn dẹp WebStorage)
+        const bridge = window.iOSBridge || window.NativeBridge || window.AndroidBridge;
+        if (bridge && typeof bridge.getAuthSession === 'function') {
+          const nativeData = bridge.getAuthSession();
+          if (typeof nativeData === 'object' && nativeData && (nativeData.email || nativeData.id)) {
+            return nativeData;
+          }
+          if (typeof nativeData === 'string' && nativeData.trim().length > 0) {
             try {
-              const u = JSON.parse(nativeStr);
-              if (u && u.email) return u;
+              const u = JSON.parse(nativeData);
+              if (u && (u.email || u.id)) return u;
             } catch (_) { }
           }
         }
-        // 2. Dự phòng đọc từ localStorage
-        const raw = localStorage.getItem(SOOI_SESSION_KEY);
-        return raw ? JSON.parse(raw) : null;
+
+        // 3. Dự phòng đọc từ localStorage / sessionStorage
+        const raw = localStorage.getItem(SOOI_SESSION_KEY) || sessionStorage.getItem(SOOI_SESSION_KEY);
+        if (raw) {
+          const u = JSON.parse(raw);
+          if (u && (u.email || u.id)) return u;
+        }
+        return null;
       } catch (e) {
         return null;
       }
@@ -2527,10 +2614,14 @@ CREATE POLICY "Users manage own settings" ON public.sooi_settings FOR ALL USING 
 
     function clearLocalUserSession() {
       try {
-        localStorage.removeItem(SOOI_SESSION_KEY);
-        // Xóa đồng thời trong Android Native SharedPreferences khi chủ động bấm Đăng xuất
-        if (window.AndroidBridge && typeof window.AndroidBridge.clearAuthSession === 'function') {
-          window.AndroidBridge.clearAuthSession();
+        window.__INITIAL_SOOI_SESSION__ = '';
+        document.documentElement.classList.remove('user-logged-in');
+        try { localStorage.removeItem(SOOI_SESSION_KEY); } catch (_) {}
+        try { sessionStorage.removeItem(SOOI_SESSION_KEY); } catch (_) {}
+        // Xóa đồng thời trong Native SharedPreferences / UserDefaults khi chủ động bấm Đăng xuất
+        const bridge = window.iOSBridge || window.NativeBridge || window.AndroidBridge;
+        if (bridge && typeof bridge.clearAuthSession === 'function') {
+          bridge.clearAuthSession();
         }
       } catch (e) { }
     }
@@ -3096,15 +3187,38 @@ CREATE POLICY "Users manage own settings" ON public.sooi_settings FOR ALL USING 
     }
 
     /**
-     * STORAGE INITIALIZATION
+     * STORAGE INITIALIZATION (HỖ TRỢ LOCAL-FIRST & NATIVE MIRROR)
      */
     function loadDB() {
       try {
-        const rawProd = localStorage.getItem('sooi_products');
-        const rawCust = localStorage.getItem('sooi_customers');
-        const rawCash = localStorage.getItem('sooi_cash');
-        const rawOrders = localStorage.getItem('sooi_orders');
-        const rawSettings = localStorage.getItem('sooi_settings');
+        let rawProd = localStorage.getItem('sooi_products');
+        let rawCust = localStorage.getItem('sooi_customers');
+        let rawCash = localStorage.getItem('sooi_cash');
+        let rawOrders = localStorage.getItem('sooi_orders');
+        let rawSettings = localStorage.getItem('sooi_settings');
+
+        // Nếu Web Storage rỗng (thường gặp khi iOS đóng app và mở lại), khôi phục từ Native Storage iOS (UserDefaults)
+        if (!rawProd && !rawCust && !rawCash && !rawOrders) {
+          const bridge = window.iOSBridge || window.NativeBridge || window.AndroidBridge;
+          let backupStr = window.__INITIAL_SOOI_DB__ || '';
+          if (!backupStr && bridge && typeof bridge.getAppData === 'function') {
+            backupStr = bridge.getAppData('saved_app_db') || bridge.getAppData('sooi_db_backup') || '';
+          }
+          if (backupStr && backupStr.trim().length > 0) {
+            try {
+              const b = JSON.parse(backupStr);
+              if (b && typeof b === 'object') {
+                if (Array.isArray(b.products)) db.products = b.products;
+                if (Array.isArray(b.customers)) db.customers = b.customers;
+                if (Array.isArray(b.cashFlows)) db.cashFlows = b.cashFlows;
+                if (Array.isArray(b.orders)) db.orders = b.orders;
+                if (b.settings) db.settings = b.settings;
+                console.log('[Storage] Đã khôi phục thành công database từ Native iOS UserDefaults.');
+                return;
+              }
+            } catch (_) {}
+          }
+        }
 
         db.products = rawProd ? JSON.parse(rawProd) : (db.products || []);
         db.customers = rawCust ? JSON.parse(rawCust) : (db.customers || []);
@@ -3134,11 +3248,19 @@ CREATE POLICY "Users manage own settings" ON public.sooi_settings FOR ALL USING 
     }
 
     function saveDB() {
-      localStorage.setItem('sooi_products', JSON.stringify(db.products));
-      localStorage.setItem('sooi_customers', JSON.stringify(db.customers));
-      localStorage.setItem('sooi_cash', JSON.stringify(db.cashFlows));
-      localStorage.setItem('sooi_orders', JSON.stringify(db.orders));
-      localStorage.setItem('sooi_settings', JSON.stringify(db.settings));
+      try {
+        localStorage.setItem('sooi_products', JSON.stringify(db.products));
+        localStorage.setItem('sooi_customers', JSON.stringify(db.customers));
+        localStorage.setItem('sooi_cash', JSON.stringify(db.cashFlows));
+        localStorage.setItem('sooi_orders', JSON.stringify(db.orders));
+        localStorage.setItem('sooi_settings', JSON.stringify(db.settings));
+      } catch (_) {}
+
+      // Đồng bộ trực tiếp bản sao lưu database sang Native Storage iOS (UserDefaults)
+      const bridge = window.iOSBridge || window.NativeBridge || window.AndroidBridge;
+      if (bridge && typeof bridge.saveAppData === 'function') {
+        bridge.saveAppData('saved_app_db', JSON.stringify(db));
+      }
 
       // Tự động đồng bộ lên Supabase Cloud nếu đang đăng nhập
       if (currentUser && supabaseClient && (window.ENV?.AUTO_SYNC !== false)) {
@@ -3358,17 +3480,63 @@ CREATE POLICY "Users manage own settings" ON public.sooi_settings FOR ALL USING 
      * 2. POS BÁN HÀNG LOGIC
      */
 
+    function updatePosCartBadges() {
+      const badge = document.getElementById('pos-cart-badge');
+      const totalCount = Object.values(currentCart).reduce((a, b) => a + (Number(b) || 0), 0);
+      if (badge) {
+        badge.textContent = totalCount;
+        if (totalCount > 0) {
+          badge.classList.remove('hidden');
+        } else {
+          badge.classList.add('hidden');
+        }
+      }
+    }
+
+    function addToCart(prodId) {
+      const p = db.products.find(x => x.id === prodId);
+      if (!p) return;
+      if (db.settings.blockNegativeStock && p.stock != null && p.stock <= (currentCart[prodId] || 0)) {
+        notifyAndroid(`Mặt hàng "${p.name}" đã hết tồn kho!`);
+        return;
+      }
+      currentCart[prodId] = (currentCart[prodId] || 0) + 1;
+      updatePosCartBadges();
+      renderPosProducts();
+      if (document.getElementById('cart-drawer-panel')?.classList.contains('translate-y-0')) {
+        renderCartDrawerItems();
+      }
+    }
+
+    function removeFromCart(prodId) {
+      if (!currentCart[prodId]) return;
+      currentCart[prodId] -= 1;
+      if (currentCart[prodId] <= 0) {
+        delete currentCart[prodId];
+      }
+      updatePosCartBadges();
+      renderPosProducts();
+      if (document.getElementById('cart-drawer-panel')?.classList.contains('translate-y-0')) {
+        renderCartDrawerItems();
+      }
+    }
+
     function renderPosCategories() {
-      const cats = ['Tất cả', 'Trà & Sinh tố', 'Đồ uống', 'Đồ ăn', 'Cà phê', 'Bánh ngọt'];
       const container = document.getElementById('pos-category-container');
       if (!container) return;
 
-      container.innerHTML = cats.map(c => {
+      const defaultCats = ['Trà & Sinh tố', 'Đồ uống', 'Đồ ăn', 'Đồ ăn vặt', 'Cà phê', 'Bánh ngọt'];
+      const prodCats = (db.products || [])
+        .map(p => (p.category || '').trim())
+        .filter(c => c.length > 0);
+      const allCats = ['Tất cả', ...Array.from(new Set([...defaultCats, ...prodCats]))];
+
+      container.innerHTML = allCats.map(c => {
         const isActive = currentPosCategory === c;
         return `
-          <button onclick="selectPosCategory('${c}')"
+          <button onclick="selectPosCategory('${escapeHtml(c)}')"
             class="shrink-0 px-4 py-1.5 rounded-full text-[12.5px] transition-all ${isActive ? 'bg-[#0B7A60] text-white shadow-xs font-bold' : 'bg-white border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50'}">
-            ${c}
+            ${escapeHtml(c)}
           </button>
         `;
       }).join('');
@@ -3387,8 +3555,15 @@ CREATE POLICY "Users manage own settings" ON public.sooi_settings FOR ALL USING 
       const search = (document.getElementById('pos-search-input')?.value || '').toLowerCase().trim();
 
       const filtered = db.products.filter(p => {
-        const matchesCat = currentPosCategory === 'Tất cả' || p.category === currentPosCategory;
-        const matchesSearch = !search || p.name.toLowerCase().includes(search);
+        let matchesCat = (currentPosCategory === 'Tất cả');
+        if (!matchesCat) {
+          const pCat = (p.category || '').toLowerCase().trim();
+          const curCat = currentPosCategory.toLowerCase().trim();
+          matchesCat = (pCat === curCat) || pCat.includes(curCat) || curCat.includes(pCat);
+        }
+        const matchesSearch = !search ||
+          (p.name && p.name.toLowerCase().includes(search)) ||
+          (p.category && p.category.toLowerCase().includes(search));
         return matchesCat && matchesSearch;
       });
 
@@ -3411,6 +3586,7 @@ CREATE POLICY "Users manage own settings" ON public.sooi_settings FOR ALL USING 
           <div class="py-12 text-center text-slate-400">
             <span class="material-symbols-outlined text-[36px]">search_off</span>
             <p class="text-[13px] mt-1 font-semibold">Không tìm thấy món phù hợp</p>
+            <button onclick="selectPosCategory('Tất cả'); document.getElementById('pos-search-input').value='';" class="mt-2 text-[12px] text-[#0B7A60] font-bold underline">Xem tất cả mặt hàng</button>
           </div>
         `;
         return;
@@ -3419,7 +3595,8 @@ CREATE POLICY "Users manage own settings" ON public.sooi_settings FOR ALL USING 
       // Render dạng thẻ ngang (Horizontal Cards) theo chuẩn Ảnh 3
       grid.innerHTML = filtered.map(p => {
         const inCartQty = currentCart[p.id] || 0;
-        const isOutOfStock = (p.stock != null && p.stock <= 0);
+        const stockNum = Number(p.stock != null ? p.stock : 0);
+        const isOutOfStock = stockNum <= 0;
         let iconName = 'local_cafe';
         if (p.category && (p.category.includes('Trà') || p.category.includes('Sinh tố'))) {
           iconName = 'emoji_food_beverage';
@@ -3441,8 +3618,8 @@ CREATE POLICY "Users manage own settings" ON public.sooi_settings FOR ALL USING 
               </div>
             </div>
             <div class="flex flex-col items-end justify-between self-stretch gap-1.5 shrink-0">
-              <span class="px-2.5 py-0.5 bg-slate-100 rounded-full text-[10.5px] font-semibold text-slate-600">
-                Còn ${p.stock != null ? p.stock : 45} ${p.unit || 'ly'}
+              <span class="px-2.5 py-0.5 ${isOutOfStock ? 'bg-red-50 text-red-600 font-bold' : 'bg-slate-100 text-slate-600 font-semibold'} rounded-full text-[10.5px]">
+                ${isOutOfStock ? 'Hết hàng' : `Còn ${stockNum} ${escapeHtml(p.unit || 'ly')}`}
               </span>
               <button onclick="event.stopPropagation(); addToCart('${p.id}')"
                 class="w-8 h-8 rounded-full bg-[#ECFBF2] text-[#0B7A60] flex items-center justify-center hover:bg-[#D5F4E4] active:scale-90 transition shadow-2xs">
@@ -4165,8 +4342,8 @@ CREATE POLICY "Users manage own settings" ON public.sooi_settings FOR ALL USING 
 
     function addCashAmount(delta) {
       const input = document.getElementById('cash-input-amount');
-      const cur = parseInt(input.value || 0, 10);
-      input.value = cur + delta;
+      const cur = parseMoneyInput(input.value);
+      input.value = formatNumberWithCommas(cur + delta);
     }
 
     function saveCashRecord() {
@@ -4175,7 +4352,7 @@ CREATE POLICY "Users manage own settings" ON public.sooi_settings FOR ALL USING 
         openPricingModal(true);
         return;
       }
-      const amount = parseInt(document.getElementById('cash-input-amount').value || 0, 10);
+      const amount = parseMoneyInput(document.getElementById('cash-input-amount').value);
       const memo = (document.getElementById('cash-input-memo').value || '').trim();
       const category = document.getElementById('cash-input-category').value;
 
@@ -4261,7 +4438,7 @@ CREATE POLICY "Users manage own settings" ON public.sooi_settings FOR ALL USING 
 
     function openNewDebtModal(prefillName = '', prefillAmount = 0, prefillMemo = '') {
       document.getElementById('debt-input-name').value = prefillName || '';
-      document.getElementById('debt-input-amount').value = prefillAmount > 0 ? prefillAmount : '';
+      document.getElementById('debt-input-amount').value = prefillAmount > 0 ? formatNumberWithCommas(prefillAmount) : '';
       document.getElementById('debt-input-memo').value = prefillMemo || '';
 
       const backdrop = document.getElementById('debt-modal-backdrop');
@@ -4288,7 +4465,7 @@ CREATE POLICY "Users manage own settings" ON public.sooi_settings FOR ALL USING 
         return;
       }
       const name = (document.getElementById('debt-input-name').value || '').trim();
-      const amount = parseInt(document.getElementById('debt-input-amount').value || 0, 10);
+      const amount = parseMoneyInput(document.getElementById('debt-input-amount').value);
       const memo = (document.getElementById('debt-input-memo').value || '').trim();
 
       if (!name) {
@@ -4478,10 +4655,10 @@ CREATE POLICY "Users manage own settings" ON public.sooi_settings FOR ALL USING 
       document.getElementById('product-modal-header').textContent = 'Sửa Mặt Hàng';
       document.getElementById('product-edit-id').value = p.id;
       document.getElementById('prod-input-name').value = p.name;
-      document.getElementById('prod-input-price').value = p.price;
-      document.getElementById('prod-input-cost').value = p.cost;
-      document.getElementById('prod-input-stock').value = p.stock;
-      document.getElementById('prod-input-category').value = p.category;
+      document.getElementById('prod-input-price').value = formatNumberWithCommas(p.price);
+      document.getElementById('prod-input-cost').value = formatNumberWithCommas(p.cost);
+      document.getElementById('prod-input-stock').value = p.stock != null ? p.stock : 0;
+      document.getElementById('prod-input-category').value = p.category || 'Cà phê';
 
       const delBtn = document.getElementById('btn-delete-product');
       if (delBtn) delBtn.classList.remove('hidden');
@@ -4511,8 +4688,8 @@ CREATE POLICY "Users manage own settings" ON public.sooi_settings FOR ALL USING 
       }
       const id = document.getElementById('product-edit-id').value;
       const name = (document.getElementById('prod-input-name').value || '').trim();
-      const price = parseInt(document.getElementById('prod-input-price').value || 0, 10);
-      const cost = parseInt(document.getElementById('prod-input-cost').value || 0, 10);
+      const price = parseMoneyInput(document.getElementById('prod-input-price').value);
+      const cost = parseMoneyInput(document.getElementById('prod-input-cost').value);
       const stock = parseInt(document.getElementById('prod-input-stock').value || 0, 10);
       const category = document.getElementById('prod-input-category').value;
 
@@ -5061,26 +5238,32 @@ CREATE POLICY "Users manage own settings" ON public.sooi_settings FOR ALL USING 
       }
       const bridge = window.iOSBridge || window.NativeBridge || window.AndroidBridge;
 
-      // Nếu đang trong trạng thái nghe -> Bấm lại để dừng
+      // Nếu đang trong trạng thái nghe -> Bấm lại để dừng và THỰC HIỆN LỆNH NGAY LẬP TỨC
       if (isListening) {
+        const inp = document.getElementById('ai-input');
+        const spokenText = (inp ? inp.value : '').trim();
+
         if (isRecordingPhoWhisper) {
           stopPhoWhisperRecording();
         } else if (bridge && typeof bridge.stopVoiceRecognition === 'function') {
           bridge.stopVoiceRecognition();
-          isListening = false;
-          setMicPulseUI(false);
         } else if (speechRecognizer) {
           try {
             speechRecognizer.stop();
           } catch (_) {
             try { speechRecognizer.abort(); } catch (_) { }
           }
-          isListening = false;
-          setMicPulseUI(false);
           speechRecognizer = null;
-        } else {
-          isListening = false;
-          setMicPulseUI(false);
+        }
+
+        isListening = false;
+        setMicPulseUI(false);
+
+        // Nếu đã có văn bản nhận diện được -> Thực hiện ngay lập tức không cần chờ hệ thống tự dừng
+        if (spokenText && spokenText.length > 0) {
+          console.log('[Mic] Người dùng bấm micro lần 2 -> Thực hiện lệnh ngay:', spokenText);
+          if (inp) inp.placeholder = 'Đang xử lý: ' + spokenText;
+          executeAiCommand(spokenText);
         }
         return;
       }
@@ -5215,7 +5398,7 @@ CREATE POLICY "Users manage own settings" ON public.sooi_settings FOR ALL USING 
 
       const amtInput = document.getElementById('voice-draft-input-amount');
       if (amtInput) {
-        amtInput.value = draftData.amount || '';
+        amtInput.value = draftData.amount ? formatNumberWithCommas(draftData.amount) : '';
         updateVoiceDraftAmountDisplay();
       }
 
@@ -5274,7 +5457,7 @@ CREATE POLICY "Users manage own settings" ON public.sooi_settings FOR ALL USING 
     function updateVoiceDraftAmountDisplay() {
       const amtInput = document.getElementById('voice-draft-input-amount');
       const wordsSpan = document.getElementById('voice-draft-amount-words');
-      const val = parseInt(amtInput?.value || '0', 10);
+      const val = parseMoneyInput(amtInput?.value);
       if (wordsSpan) {
         wordsSpan.textContent = val > 0 ? formatVND(val) : '0 đ';
       }
@@ -5283,8 +5466,8 @@ CREATE POLICY "Users manage own settings" ON public.sooi_settings FOR ALL USING 
     function adjustVoiceDraftAmount(delta) {
       const amtInput = document.getElementById('voice-draft-input-amount');
       if (amtInput) {
-        const cur = parseInt(amtInput.value || '0', 10) || 0;
-        amtInput.value = Math.max(0, cur + delta);
+        const cur = parseMoneyInput(amtInput.value) || 0;
+        amtInput.value = formatNumberWithCommas(Math.max(0, cur + delta));
         updateVoiceDraftAmountDisplay();
       }
     }
@@ -5306,7 +5489,7 @@ CREATE POLICY "Users manage own settings" ON public.sooi_settings FOR ALL USING 
       const dateInput = document.getElementById('voice-draft-input-date');
       const methodRadio = document.querySelector('input[name="voice-draft-method"]:checked');
 
-      const amount = parseInt(amtInput?.value || '0', 10);
+      const amount = parseMoneyInput(amtInput?.value);
       if (!amount || amount <= 0) {
         notifyAndroid('Vui lòng nhập số tiền hợp lệ lớn hơn 0!');
         amtInput?.focus();
@@ -6026,12 +6209,13 @@ CREATE POLICY "Users manage own settings" ON public.sooi_settings FOR ALL USING 
         return;
       }
 
-      // Đã có phiên lưu cục bộ -> Phục hồi ngay (Local-first)
+      // Đã có phiên lưu cục bộ -> Phục hồi ngay và MỞ KHÓA NGAY LẬP TỨC (KHÔNG BẮT ĐĂNG NHẬP LẠI)
       currentUser = cachedUser;
       updateUserAuthUI();
       updateUnifiedHeaderUI();
+      unlockApp();
 
-      // 2. Kiểm tra kết nối mạng
+      // 2. Kiểm tra kết nối mạng và đồng bộ ngầm
       const isOnline = (window.AndroidBridge && typeof window.AndroidBridge.isNetworkAvailable === 'function')
         ? window.AndroidBridge.isNetworkAvailable()
         : (navigator.onLine !== false);

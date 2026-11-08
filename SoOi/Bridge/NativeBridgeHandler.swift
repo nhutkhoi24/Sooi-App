@@ -23,12 +23,27 @@ final class NativeBridgeHandler: NSObject, WKScriptMessageHandler {
         case "saveAuthSession":
             if let sessionStr = dict["data"] as? String {
                 UserDefaults.standard.set(sessionStr, forKey: "saved_user_session")
+                UserDefaults.standard.synchronize()
                 print("[SoOiBridge] Đã lưu session vào UserDefaults thành công.")
+            } else if let sessionDict = dict["data"] as? [String: Any],
+                      let jsonData = try? JSONSerialization.data(withJSONObject: sessionDict),
+                      let jsonString = String(data: jsonData, encoding: .utf8) {
+                UserDefaults.standard.set(jsonString, forKey: "saved_user_session")
+                UserDefaults.standard.synchronize()
+                print("[SoOiBridge] Đã lưu dict session vào UserDefaults thành công.")
             }
 
         case "clearAuthSession":
             UserDefaults.standard.removeObject(forKey: "saved_user_session")
+            UserDefaults.standard.synchronize()
             print("[SoOiBridge] Đã xóa session trong UserDefaults.")
+
+        case "saveAppData":
+            if let key = dict["key"] as? String, let data = dict["data"] as? String {
+                UserDefaults.standard.set(data, forKey: key)
+                UserDefaults.standard.synchronize()
+                print("[SoOiBridge] Đã lưu dữ liệu App vào UserDefaults: \(key)")
+            }
 
         case "showToast":
             if let msg = dict["data"] as? String {

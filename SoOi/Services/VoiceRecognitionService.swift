@@ -11,6 +11,7 @@ final class VoiceRecognitionService: NSObject, SFSpeechRecognizerDelegate {
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
     private let audioEngine = AVAudioEngine()
+    private var lastTranscription = ""
 
     private(set) var isListening = false
 
@@ -69,12 +70,18 @@ final class VoiceRecognitionService: NSObject, SFSpeechRecognizerDelegate {
         recognitionRequest?.endAudio()
         recognitionRequest = nil
 
+        let finalCandidate = lastTranscription
+        lastTranscription = ""
+
         recognitionTask?.cancel()
         recognitionTask = nil
 
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         
         if !silent {
+            if !finalCandidate.isEmpty {
+                onResult?(finalCandidate)
+            }
             onEnd?()
         }
         print("[SoOiVoice] Đã dừng nhận diện giọng nói.")
@@ -142,6 +149,7 @@ final class VoiceRecognitionService: NSObject, SFSpeechRecognizerDelegate {
 
             if let result = result {
                 let transcription = result.bestTranscription.formattedString.trimmingCharacters(in: .whitespacesAndNewlines)
+                self.lastTranscription = transcription
 
                 if result.isFinal {
                     self.onResult?(transcription)

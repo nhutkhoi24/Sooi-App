@@ -12,14 +12,15 @@ struct WebViewContainer: UIViewRepresentable {
     func makeUIView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
 
-        // 1. Lấy session đã lưu trước đó và app version để tiêm đồng bộ vào JS
+        // 1. Lấy session đã lưu trước đó, bản sao lưu database và app version để tiêm đồng bộ vào JS
         let savedSession = UserDefaults.standard.string(forKey: "saved_user_session") ?? ""
+        let savedDb = UserDefaults.standard.string(forKey: "saved_app_db") ?? ""
         let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
 
         let userContentController = WKUserContentController()
 
         // 2. Tiêm NativeBridge JavaScript ngay khi tài liệu bắt đầu nạp (documentStart)
-        let scriptSource = BridgeScript.generateInjectionScript(savedSession: savedSession, appVersion: appVersion)
+        let scriptSource = BridgeScript.generateInjectionScript(savedSession: savedSession, savedDb: savedDb, appVersion: appVersion)
         let userScript = WKUserScript(source: scriptSource, injectionTime: .atDocumentStart, forMainFrameOnly: true)
         userContentController.addUserScript(userScript)
 
