@@ -61,5 +61,7 @@
 	<string>UIStatusBarStyleDarkContent</string>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>UILaunchScreen</key>
+	<dict/>
 </dict>
 </plist>
