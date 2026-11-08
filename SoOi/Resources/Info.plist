@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>vi</string>
+	<key>CFBundleDisplayName</key>
+	<string>Sổ Ơi</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Ứng dụng Sổ Ơi cần quyền truy cập Microphone để nhận diện giọng nói khi tạo đơn hàng và tra cứu.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Ứng dụng Sổ Ơi cần quyền nhận diện giọng nói tiếng Việt để xử lý lệnh thoại và tạo đơn bán hàng nhanh.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Ứng dụng Sổ Ơi cần quyền truy cập Camera để quét mã QR thanh toán hoặc mã vạch sản phẩm.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Ứng dụng Sổ Ơi cần truy cập thư viện ảnh để tải lên ảnh sản phẩm và chứng từ.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Ứng dụng Sổ Ơi cần truy cập mạng nội bộ để kết nối và in hóa đơn qua máy in nhiệt LAN/Wi-Fi.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+	</dict>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>arm64</string>
+	</array>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>UIStatusBarStyle</key>
+	<string>UIStatusBarStyleLightContent</string>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
+</dict>
+</plist>
