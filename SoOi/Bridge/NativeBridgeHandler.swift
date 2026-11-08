@@ -75,16 +75,17 @@ final class NativeBridgeHandler: NSObject, WKScriptMessageHandler {
         let voiceService = VoiceRecognitionService.shared
 
         voiceService.onReady = { [weak self] engine in
-            self?.evaluateJS("if (typeof window.onNativeSpeechReady === 'function') window.onNativeSpeechReady('\(engine)');")
+            let escaped = self?.escapeForJS(engine) ?? "\"\(engine)\""
+            self?.evaluateJS("if (typeof window.onNativeSpeechReady === 'function') window.onNativeSpeechReady(\(escaped));")
         }
 
         voiceService.onPartial = { [weak self] partialText in
-            let escaped = self?.escapeForJS(partialText) ?? ""
+            let escaped = self?.escapeForJS(partialText) ?? "\"\""
             self?.evaluateJS("if (typeof window.onNativeSpeechPartial === 'function') window.onNativeSpeechPartial(\(escaped));")
         }
 
         voiceService.onResult = { [weak self] resultText in
-            let escaped = self?.escapeForJS(resultText) ?? ""
+            let escaped = self?.escapeForJS(resultText) ?? "\"\""
             self?.evaluateJS("if (typeof window.onNativeSpeechResult === 'function') window.onNativeSpeechResult(\(escaped));")
         }
 
@@ -93,7 +94,7 @@ final class NativeBridgeHandler: NSObject, WKScriptMessageHandler {
         }
 
         voiceService.onError = { [weak self] errorMsg in
-            let escaped = self?.escapeForJS(errorMsg) ?? ""
+            let escaped = self?.escapeForJS(errorMsg) ?? "\"\""
             self?.evaluateJS("if (typeof window.onNativeSpeechError === 'function') window.onNativeSpeechError(\(escaped));")
         }
 

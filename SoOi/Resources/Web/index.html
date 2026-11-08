@@ -4844,9 +4844,10 @@ CREATE POLICY "Users manage own settings" ON public.sooi_settings FOR ALL USING 
     }
 
     function startNativeOrWebSpeechFallback() {
-      // 1. Chạy trên ứng dụng Android: Dùng bộ nhận diện tiếng Việt tích hợp sẵn (Vosk Offline)
-      if (window.AndroidBridge && typeof window.AndroidBridge.startVoiceRecognition === 'function') {
-        window.AndroidBridge.startVoiceRecognition();
+      // 1. Chạy trên ứng dụng iOS / Android Native: Dùng bộ nhận diện tiếng Việt tích hợp sẵn
+      const bridge = window.iOSBridge || window.NativeBridge || window.AndroidBridge;
+      if (bridge && typeof bridge.startVoiceRecognition === 'function') {
+        bridge.startVoiceRecognition();
         return;
       }
 
@@ -5058,12 +5059,14 @@ CREATE POLICY "Users manage own settings" ON public.sooi_settings FOR ALL USING 
         openPricingModal(true);
         return;
       }
+      const bridge = window.iOSBridge || window.NativeBridge || window.AndroidBridge;
+
       // Nếu đang trong trạng thái nghe -> Bấm lại để dừng
       if (isListening) {
         if (isRecordingPhoWhisper) {
           stopPhoWhisperRecording();
-        } else if (window.AndroidBridge && typeof window.AndroidBridge.stopVoiceRecognition === 'function') {
-          window.AndroidBridge.stopVoiceRecognition();
+        } else if (bridge && typeof bridge.stopVoiceRecognition === 'function') {
+          bridge.stopVoiceRecognition();
           isListening = false;
           setMicPulseUI(false);
         } else if (speechRecognizer) {
@@ -5083,13 +5086,13 @@ CREATE POLICY "Users manage own settings" ON public.sooi_settings FOR ALL USING 
       }
 
       // TỰ ĐỘNG 100% - KHÔNG BẮT BUỘC NGƯỜI DÙNG NHẬP TOKEN HAY CẤU HÌNH GÌ
-      // 1. Chạy trên ứng dụng Android: Dùng bộ nhận diện tiếng Việt tích hợp sẵn
-      if (window.AndroidBridge && typeof window.AndroidBridge.startVoiceRecognition === 'function') {
+      // 1. Chạy trên ứng dụng iOS / Android Native: Dùng bộ nhận diện tiếng Việt tích hợp sẵn
+      if (bridge && typeof bridge.startVoiceRecognition === 'function') {
         const engine = getSpeechEngine();
-        if (typeof window.AndroidBridge.startVoiceRecognitionWithEngine === 'function') {
-          window.AndroidBridge.startVoiceRecognitionWithEngine(engine);
+        if (typeof bridge.startVoiceRecognitionWithEngine === 'function') {
+          bridge.startVoiceRecognitionWithEngine(engine);
         } else {
-          window.AndroidBridge.startVoiceRecognition();
+          bridge.startVoiceRecognition();
         }
         return;
       }

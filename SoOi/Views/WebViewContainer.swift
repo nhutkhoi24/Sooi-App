@@ -105,6 +105,29 @@ struct WebViewContainer: UIViewRepresentable {
             }
         }
 
+        func webView(_ webView: WKWebView, runJavaScriptTextInputPanelWithPrompt prompt: String, defaultText: String?, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping (String?) -> Void) {
+            let alert = UIAlertController(title: "Sổ Ơi", message: prompt, preferredStyle: .alert)
+            alert.addTextField { textField in
+                textField.text = defaultText
+            }
+            alert.addAction(UIAlertAction(title: "Hủy", style: .cancel) { _ in completionHandler(nil) })
+            alert.addAction(UIAlertAction(title: "Đồng ý", style: .default) { _ in
+                completionHandler(alert.textFields?.first?.text)
+            })
+
+            if let rootVC = topViewController() {
+                rootVC.present(alert, animated: true)
+            } else {
+                completionHandler(nil)
+            }
+        }
+
+        // Tự động cấp quyền Camera & Microphone nếu WebView yêu cầu
+        @available(iOS 15.0, *)
+        func webView(_ webView: WKWebView, requestMediaCapturePermissionFor origin: WKSecurityOrigin, initiatedByFrame frame: WKFrameInfo, type: WKMediaCaptureType, decisionHandler: @escaping (WKPermissionDecision) -> Void) {
+            decisionHandler(.grant)
+        }
+
         private func topViewController() -> UIViewController? {
             guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
                   let window = windowScene.windows.first(where: { $0.isKeyWindow }) else {

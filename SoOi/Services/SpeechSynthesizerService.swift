@@ -35,11 +35,13 @@ final class SpeechSynthesizerService: NSObject, AVSpeechSynthesizerDelegate {
                 }
 
                 let utterance = AVSpeechUtterance(string: text)
-                // Tìm giọng đọc tiếng Việt (vi-VN)
-                if let vietnameseVoice = AVSpeechSynthesisVoice(language: "vi-VN") {
+                // Tìm giọng đọc tiếng Việt (vi-VN), hỗ trợ fallback đa tầng
+                if let vietnameseVoice = AVSpeechSynthesisVoice(language: "vi-VN") ??
+                                         AVSpeechSynthesisVoice(language: "vi_VN") ??
+                                         AVSpeechSynthesisVoice.speechVoices().first(where: { $0.language.starts(with: "vi") }) ??
+                                         AVSpeechSynthesisVoice(language: Locale.current.identifier) ??
+                                         AVSpeechSynthesisVoice(language: "en-US") {
                     utterance.voice = vietnameseVoice
-                } else if let defaultVoice = AVSpeechSynthesisVoice(language: Locale.current.identifier) {
-                    utterance.voice = defaultVoice
                 }
 
                 utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 0.95
@@ -55,7 +57,7 @@ final class SpeechSynthesizerService: NSObject, AVSpeechSynthesizerDelegate {
     private func configureAudioSession() {
         do {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers, .defaultToSpeaker])
+            try session.setCategory(.playAndRecord, mode: .default, options: [.duckOthers, .defaultToSpeaker, .allowBluetooth])
             try session.setActive(true, options: .notifyOthersOnDeactivation)
         } catch {
             print("[SoOiTTS] Lỗi cấu hình AVAudioSession: \(error.localizedDescription)")
