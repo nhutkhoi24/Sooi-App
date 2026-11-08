@@ -11,21 +11,22 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            // Nền thương hiệu bao phủ cả tai thỏ / Dynamic Island và thanh điều hướng dưới
-            primaryBrandColor
+            // Nền trắng tràn viền phủ trọn vẹn màn hình trên mọi dòng máy iPhone, iPad
+            Color.white
                 .ignoresSafeArea()
 
-            // Web container
+            // Web container tràn viền toàn bộ khung hình (Edge-to-Edge)
             WebViewContainer(currentWebView: $currentWebView) { message in
                 showToast(message)
             }
-            .ignoresSafeArea(.keyboard, edges: .bottom)
+            .ignoresSafeArea()
 
-            // Toast thông báo góc dưới
+            // Toast thông báo góc dưới, nằm an toàn trên thanh điều hướng & home indicator
             if let message = toastMessage {
                 VStack {
                     Spacer()
                     ToastView(message: message)
+                        .padding(.bottom, 48)
                 }
                 .zIndex(10)
             }

@@ -37,7 +37,7 @@ struct WebViewContainer: UIViewRepresentable {
         }
 
         let webView = WKWebView(frame: .zero, configuration: configuration)
-        webView.backgroundColor = UIColor(red: 11/255.0, green: 122/255.0, blue: 96/255.0, alpha: 1.0)
+        webView.backgroundColor = .white
         webView.isOpaque = true
         webView.navigationDelegate = context.coordinator
         webView.uiDelegate = context.coordinator
